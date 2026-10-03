@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detektif Empati: Fakta atau Mitos? - Game BK</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      user-select: none;
+    }
+    .card-swipe {
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      touch-action: pan-y;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between items-center p-4">
+
+  <!-- HEADER -->
+  <header class="w-full max-w-md flex justify-between items-center py-2">
+    <div class="flex items-center space-x-2">
+      <div class="w-9 h-9 rounded-xl bg-amber-400 flex items-center justify-center text-slate-900 font-extrabold text-lg shadow-md shadow-amber-400/20">
+        🕵️
+      </div>
+      <div>
+        <h1 class="font-bold text-sm tracking-wide text-white">Detektif Empati</h1>
+        <p class="text-[11px] text-slate-400">Ice Breaking Bimbingan Konseling</p>
+      </div>
+    </div>
+    <div id="stat-score-badge" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-xs font-semibold text-amber-300">
+      Skor: <span id="score-display">0</span>
+    </div>
+  </header>
+
+  <!-- KONTEN AREA KARTU -->
+  <main class="w-full max-w-md my-auto flex flex-col items-center">
+
+    <!-- Progress Bar -->
+    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-4 border border-slate-700/50">
+      <div id="progress-bar" class="bg-gradient-to-r from-amber-400 to-emerald-400 h-full w-0 transition-all duration-300"></div>
+    </div>
+
+    <!-- 1. LAYAR UTAMA: KARTU DETEKTIF -->
+    <div id="game-view" class="w-full relative min-h-[380px] flex items-center justify-center">
+      
+      <!-- Kartu Kasus Empati -->
+      <div id="active-card" class="card-swipe w-full bg-slate-800/90 border border-slate-700/80 rounded-3xl p-6 shadow-2xl flex flex-col justify-between relative overflow-hidden backdrop-blur-md min-h-[360px]">
+        
+        <!-- Badge Kategori Kasus -->
+        <div class="flex justify-between items-center">
+          <span id="case-category" class="px-3 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-bold rounded-lg tracking-wider uppercase">
+            Misteri Teman Sebaya
+          </span>
+          <span id="case-counter" class="text-xs text-slate-400 font-semibold">1 / 8</span>
+        </div>
+
+        <!-- Teks Kasus / Pernyataan -->
+        <div class="my-6 text-center">
+          <p class="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-2">Kasus Investigasi:</p>
+          <h2 id="case-statement" class="text-lg sm:text-xl font-bold leading-relaxed text-white">
+            "Menangis saat merasa tertekan atau sedih adalah tanda bahwa mental seseorang lemah."
+          </h2>
+        </div>
+
+        <!-- Indikator Geser / Bantuan -->
+        <div class="text-center">
+          <p class="text-[11px] text-slate-500 font-medium">Geser kartu ke kiri/kanan atau tekan tombol di bawah</p>
+        </div>
+
+      </div>
+
+      <!-- Overlay Jawaban Langsung -->
+      <div id="feedback-overlay" class="absolute inset-0 bg-slate-900/95 rounded-3xl border border-slate-700 p-6 flex flex-col justify-between items-center text-center hidden z-20 transition-all">
+        <div class="my-auto">
+          <div id="feedback-icon" class="text-5xl mb-2">💡</div>
+          <h3 id="feedback-verdict" class="text-xl font-extrabold mb-1">ANALISIS TEPAT!</h3>
+          <p id="feedback-answer-type" class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3">Ini adalah Mitos</p>
+          <p id="feedback-explanation" class="text-sm text-slate-300 leading-relaxed max-w-xs mx-auto">
+            Menangis adalah pelepasan emosi alami tubuh untuk menurunkan hormon kortisol penyebab stres. Mengakui perasaan justru tanda keberanian!
+          </p>
+        </div>
+        <button onclick="nextCard()" class="w-full py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-sm transition-all shadow-lg shadow-amber-400/20 active:scale-95">
+          Investigasi Kasus Berikutnya ➔
+        </button>
+      </div>
+
+    </div>
+
+    <!-- TOMBOL AKSI CEPAT (MITOS VS FAKTA) -->
+    <div id="action-controls" class="w-full grid grid-cols-2 gap-4 mt-6">
+      <button onclick="handleAnswer(false)" class="py-3.5 px-4 bg-rose-500/10 hover:bg-rose-500/20 border-2 border-rose-500/40 hover:border-rose-500 text-rose-300 hover:text-white rounded-2xl font-bold text-sm flex items-center justify-center space-x-2 transition-all active:scale-95">
+        <span class="text-lg">❌</span>
+        <span>MITOS</span>
+      </button>
+
+      <button onclick="handleAnswer(true)" class="py-3.5 px-4 bg-emerald-500/10 hover:bg-emerald-500/20 border-2 border-emerald-500/40 hover:border-emerald-500 text-emerald-300 hover:text-white rounded-2xl font-bold text-sm flex items-center justify-center space-x-2 transition-all active:scale-95">
+        <span class="text-lg">✅</span>
+        <span>FAKTA</span>
+      </button>
+    </div>
+
+    <!-- 2. LAYAR SELESAI / REKAP LENCANA -->
+    <div id="finish-view" class="w-full bg-slate-800 border border-slate-700 rounded-3xl p-6 text-center hidden shadow-2xl">
+      <div class="w-16 h-16 rounded-2xl bg-amber-400/20 border border-amber-400 flex items-center justify-center text-3xl mx-auto mb-3">
+        🎖️
+      </div>
+      <h2 class="text-xl font-extrabold text-white mb-1">Misi Detektif Selesai!</h2>
+      <p class="text-xs text-slate-400 mb-4">Kemampuan empati dan pemahaman sosialmu sangat luar biasa.</p>
+
+      <div class="bg-slate-900/60 border border-slate-700 rounded-2xl p-4 mb-4">
+        <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Gelar Investigasimu:</p>
+        <h3 id="result-badge-title" class="text-lg font-black text-amber-300 mt-1">Detektif Empati Bintang 5</h3>
+        <p id="result-badge-desc" class="text-xs text-slate-300 mt-1">Kamu sangat peka, menghargai perasaan teman, dan tahu peran nyata Guru BK di sekolah!</p>
+        <div class="mt-3 pt-3 border-t border-slate-700/60 text-xs text-slate-400">
+          Akurasi Jawaban: <span id="final-accuracy" class="font-bold text-white">8/8 Benar</span>
+        </div>
+      </div>
+
+      <button onclick="restartGame()" class="w-full py-3.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold rounded-xl text-sm transition-all shadow-lg shadow-amber-400/20 active:scale-95">
+        🔄 Ulangi Misi Kasus
+      </button>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="w-full max-w-md text-center py-2">
+    <p class="text-[11px] text-slate-500">Ruang Aman Bimbingan & Konseling • Mendengar Tanpa Menghakimi</p>
+  </footer>
+
+  <!-- SCRIPT LOGIKA GAME -->
+  <script>
+    // 8 KASUS EMPATI & BK
+    const cases = [
+      {
+        kategori: "Kesehatan Mental",
+        pernyataan: "Menangis saat merasa tertekan atau sedih adalah bukti nyata bahwa seseorang memiliki mental yang lemah.",
+        isFakta: false,
+        penjelasan: "Menangis adalah mekanisme biologis alami tubuh untuk melepaskan hormon stres (kortisol). Berani mengakui emosi justru tanda kekuatan mental."
+      },
+      {
+        kategori: "Peran Guru BK",
+        pernyataan: "Semua masalah atau rahasia yang diceritakan saat konseling dengan Guru BK wajib dijaga kerahasiaannya sesuai kode etik konselor.",
+        isFakta: true,
+        penjelasan: "Guru BK memegang Asas Kerahasiaan. Ceritamu aman dan tidak akan disebarkan sembarangan ke teman sekelas atau guru lain."
+      },
+      {
+        kategori: "Dinamika Pertemanan",
+        pernyataan: "Mengejek fisik teman sambil tertawa di kelas tidak termasuk bullying asalkan tujuannya hanya 'bercanda' bersama.",
+        isFakta: false,
+        penjelasan: "Candaan hanya lucu jika kedua belah pihak merasa senang. Jika ada satu orang yang terluka atau malu, itu adalah perundungan (body shaming)."
+      },
+      {
+        kategori: "Keterbukaan Layanan",
+        pernyataan: "Ruang Bimbingan Konseling (BK) terbuka untuk semua siswa yang ingin mengasah bakat atau cita-cita, bukan hanya anak yang melanggar aturan.",
+        isFakta: true,
+        penjelasan: "Guru BK adalah sahabat bagi seluruh siswa untuk merencanakan karir, gaya belajar, eksplorasi minat, hingga curhat santai."
+      },
+      {
+        kategori: "Empati Sosial",
+        pernyataan: "Ketika teman sedang curhat sedih, cara menolong terbaik adalah langsung membandingkan dengan masalah kita yang jauh lebih berat.",
+        isFakta: false,
+        penjelasan: "Membanding-bandingkan penderitaan membuat orang lain merasa tidak didengar. Cara terbaik adalah hadir, mendengarkan, dan memvalidasi perasaannya."
+      },
+      {
+        kategori: "Fokus & Belajar",
+        pernyataan: "Belajar semalaman suntuk tanpa tidur sama sekali menjelang ujian adalah cara paling efektif untuk mengingat materi pelajaran.",
+        isFakta: false,
+        penjelasan: "Otak membutuhkan fase tidur nyenyak (deep sleep) untuk mengunci memori jangka panjang. Kurang tidur justru menurunkan daya ingat dan konsentrasi."
+      },
+      {
+        kategori: "Karakter Upstander",
+        pernyataan: "Menolak ikut menertawakan teman yang sedang dikucilkan dan mengajaknya duduk bersama sudah termasuk tindakan kepedulian yang hebat.",
+        isFakta: true,
+        penjelasan: "Tindakan kecil tersebut dinamakan menjadi Upstander (pembela). Kamu memutus rantai isolasi sosial dan memberi rasa aman pada temanmu."
+      },
+      {
+        kategori: "Bakat & Masa Depan",
+        pernyataan: "Pilihan jurusan atau cita-cita sebaiknya mengikuti pilihan sahabat terdekat agar di masa depan tetap bisa satu sekolah terus.",
+        isFakta: false,
+        penjelasan: "Setiap orang punya kombinasi bakat, minat, dan kepribadian yang unik. Menentukan masa depan harus berpijak pada potensi diri sendiri."
+      }
+    ];
+
+    let currentIndex = 0;
+    let score = 0;
+    let correctCount = 0;
+
+    // Web Audio API sintetis (tanpa file eksternal)
+    function playTone(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'correct') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+          osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.15); // G5
+          gain.gain.setValueAtTime(0.12, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.25);
+        } else if (type === 'wrong') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(280, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.1, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.25);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          gain.gain.setValueAtTime(0.05, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.08);
+        }
+      } catch (e) {}
+    }
+
+    function renderCurrentCase() {
+      const current = cases[currentIndex];
+      document.getElementById('case-category').textContent = current.kategori;
+      document.getElementById('case-counter').textContent = `${currentIndex + 1} / ${cases.length}`;
+      document.getElementById('case-statement').textContent = `"${current.pernyataan}"`;
+
+      // Progress bar
+      const progressPct = ((currentIndex) / cases.length) * 100;
+      document.getElementById('progress-bar').style.width = `${progressPct}%`;
+
+      // Reset style kartu
+      const card = document.getElementById('active-card');
+      card.style.transform = 'translateX(0px) rotate(0deg)';
+      card.style.opacity = '1';
+    }
+
+    function handleAnswer(userChosenFakta) {
+      const current = cases[currentIndex];
+      const isCorrect = (userChosenFakta === current.isFakta);
+
+      const overlay = document.getElementById('feedback-overlay');
+      const icon = document.getElementById('feedback-icon');
+      const verdict = document.getElementById('feedback-verdict');
+      const ansType = document.getElementById('feedback-answer-type');
+      const explanation = document.getElementById('feedback-explanation');
+
+      if (isCorrect) {
+        score += 25;
+        correctCount++;
+        playTone('correct');
+        icon.textContent = '🎉';
+        verdict.textContent = 'ANALISIS TEPAT!';
+        verdict.className = 'text-xl font-extrabold mb-1 text-emerald-400';
+      } else {
+        playTone('wrong');
+        icon.textContent = '🔎';
+        verdict.textContent = 'KURANG TEPAT!';
+        verdict.className = 'text-xl font-extrabold mb-1 text-rose-400';
+      }
+
+      document.getElementById('score-display').textContent = score;
+      ansType.textContent = current.isFakta ? 'Pernyataan ini adalah FAKTA' : 'Pernyataan ini adalah MITOS';
+      ansType.className = current.isFakta ? 'text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3' : 'text-xs font-bold uppercase tracking-wider text-amber-400 mb-3';
+      explanation.textContent = current.penjelasan;
+
+      document.getElementById('action-controls').classList.add('pointer-events-none', 'opacity-30');
+      overlay.classList.remove('hidden');
+    }
+
+    function nextCard() {
+      playTone('click');
+      document.getElementById('feedback-overlay').classList.add('hidden');
+      document.getElementById('action-controls').classList.remove('pointer-events-none', 'opacity-30');
+
+      currentIndex++;
+      if (currentIndex < cases.length) {
+        renderCurrentCase();
+      } else {
+        finishGame();
+      }
+    }
+
+    function finishGame() {
+      document.getElementById('progress-bar').style.width = '100%';
+      document.getElementById('game-view').classList.add('hidden');
+      document.getElementById('action-controls').classList.add('hidden');
+      document.getElementById('finish-view').classList.remove('hidden');
+
+      document.getElementById('final-accuracy').textContent = `${correctCount} dari ${cases.length} Kasus Benar`;
+
+      const titleEl = document.getElementById('result-badge-title');
+      const descEl = document.getElementById('result-badge-desc');
+
+      if (correctCount >= 7) {
+        titleEl.textContent = 'Master Empati & Sahabat Sejati 🌟';
+        descEl.textContent = 'Pemahamanmu tentang perasaan orang lain dan etika BK sangat mendalam. Kamu adalah panutan di kelas!';
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      } else if (correctCount >= 5) {
+        titleEl.textContent = 'Detektif Empati Madya 🕵️';
+        descEl.textContent = 'Kepekaan sosialmu sudah sangat baik! Terus asah telinga untuk mendengarkan teman tanpa terburu-buru menghakimi.';
+      } else {
+        titleEl.textContent = 'Penyelidik Pemula BK 🌱';
+        descEl.textContent = 'Banyak pengetahuan baru tentang mitos BK yang kamu pelajari hari ini. Guru BK selalu siap menyambutmu untuk berdiskusi!';
+      }
+    }
+
+    function restartGame() {
+      currentIndex = 0;
+      score = 0;
+      correctCount = 0;
+      document.getElementById('score-display').textContent = '0';
+      document.getElementById('finish-view').classList.add('hidden');
+      document.getElementById('game-view').classList.remove('hidden');
+      document.getElementById('action-controls').classList.remove('hidden');
+      document.getElementById('action-controls').classList.remove('pointer-events-none', 'opacity-30');
+      renderCurrentCase();
+    }
+
+    // Touch Swipe (Gestur Geser di Layar Sentuh HP)
+    let startX = 0;
+    const cardEl = document.getElementById('active-card');
+
+    cardEl.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+
+    cardEl.addEventListener('touchmove', (e) => {
+      const moveX = e.touches[0].clientX - startX;
+      cardEl.style.transform = `translateX(${moveX}px) rotate(${moveX * 0.05}deg)`;
+    }, { passive: true });
+
+    cardEl.addEventListener('touchend', (e) => {
+      const diffX = e.changedTouches[0].clientX - startX;
+      if (diffX > 90) {
+        // Geser Kanan -> FAKTA
+        handleAnswer(true);
+      } else if (diffX < -90) {
+        // Geser Kiri -> MITOS
+        handleAnswer(false);
+      } else {
+        cardEl.style.transform = 'translateX(0px) rotate(0deg)';
+      }
+    });
+
+    // Inisialisasi awal
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCurrentCase();
+    });
+  </script>
+</body>
+</html>
